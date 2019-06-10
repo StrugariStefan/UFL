@@ -6,3 +6,6 @@ repr_test/
 repr_train/
 models/
 test_images/
+ModelTest.ipynb
+debug.log
+.ipynb_checkpoints/ModelTest-checkpoint.ipynb
