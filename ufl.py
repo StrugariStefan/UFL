@@ -13,6 +13,8 @@ from feature_learner import kernel
 from classifier import classification_algorithms
 from model import Model
 
+from load_images import load_images
+
 class NumberValidator(Validator):
     def validate(self, document):
         try:
@@ -128,6 +130,16 @@ trainmodel_questions = [
         'choices': [{'name':c} for c in classification_algorithms.keys()],
         'validate': lambda answer: 'You must choose at least one linear classifier' \
             if len(answer) == 0 else True
+    },
+]
+
+predict_questions = [
+    {
+        'type': 'list',
+        'name': 'model',
+        'message': 'Choose model',
+        'choices': [],
+        'filter': lambda val: val.lower()
     },
 ]
 
@@ -250,11 +262,30 @@ def trainmodel():
         for classifier in answers['classalg']:
             suffix = "_" + classifier
             classalg = classification_algorithms[classifier]()
-            score = classalg(train_features, data['y_train'], test_features, data['y_test'])
+            score = classalg(train_features, data['y_train'], test_features, data['y_test'], True)
             model = Model(classalg, feature_learner, train_features, test_features, data['x_train_raw'], data['y_train'], data['x_test_raw'], data['y_test'], k, receptive_field_size, stride)
             Persistance("models").save(model, feature_set, suffix)
 
 
+def predict(path):
+    files = get_files("models") 
+    predict_questions[0]['choices'] = files
+    answers = prompt(predict_questions, style=style)
+    
+    model, _ = Persistance("models").load(answers['model'], '')
+
+    width, height = model.x_train.shape[1:3]
+
+    images, files = load_images(path, width, height)
+    
+    predictions = dict()
+
+    if len(images) > 0:
+        y_pred = model.predict(images)
+        for i, f in enumerate(files):
+            predictions[f] = y_pred[i]
+
+        pprint(predictions)
 
 
 def get_files(dir):
@@ -264,17 +295,25 @@ def get_files(dir):
     return files
 
 @click.command()
-@click.option('-c', '-command', type = click.Choice(['preprocess', 'pretrain', 'extractfeatures', 'trainmodel']))
-def main(c):
+@click.option('-c', '-command', type = click.Choice(['preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict']))
+@click.option('-p', '-path', type = str)
+def main(c, p):
     if c == 'preprocess':
         preprocess()
     elif c == 'pretrain':
         pretrain()
     elif c == 'extractfeatures':
         extractfeatures()
-    else:
+    elif c == 'trainmodel':
         trainmodel()
-
+    else:
+        if p == None:
+            print ("Specify path to folder or image...\n\t-p\n\t--path")
+            return
+        try:
+            predict(p)
+        except NotADirectoryError:
+            print ("Directory doesn't exist")
     
 
 

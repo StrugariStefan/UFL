@@ -41,7 +41,7 @@ class IClassifier:
         
 
     @abstractmethod
-    def __call__(self, x_train, y_train, x_test, y_test, feature_learner): raise NotImplementedError
+    def __call__(self, x_train, y_train, x_test, y_test, to_compute_training_error = False): raise NotImplementedError
 
     @abstractmethod
     def predict(self, img_repr): raise NotImplementedError
@@ -98,7 +98,7 @@ class Svc(IClassifier):
         self.clf = None
         self.accuracy = None
 
-    def __call__(self, x_train, y_train, x_test, y_test):
+    def __call__(self, x_train, y_train, x_test, y_test, to_compute_training_error = False):
         from sklearn.svm import LinearSVC
 
         max_score = 0
@@ -115,6 +115,10 @@ class Svc(IClassifier):
 
                 y_pred = clf.predict(x_test)
                 score = sum(y_pred == y_test)
+
+                if to_compute_training_error:
+                    y_pred_train = clf.predict(x_train)
+                    train_score = sum(y_pred_train == y_train)
             # print ("Timp: (s)", time.time() - start_time)
             # print ("SVC ended")
 
@@ -123,6 +127,9 @@ class Svc(IClassifier):
                 max_score = score
                 best_clf = clf
                 best_c = c
+                if to_compute_training_error:
+                    self.train_score = train_score / len(x_train)
+                
         # self.__save_model__(Model(best_clf, feature_learner))
 
         self.clf, self.accuracy = best_clf, max_score / y_test.shape[0]
@@ -131,7 +138,7 @@ class Svc(IClassifier):
 
     def predict(self, img_repr):
         if self.clf != None:
-            return self.clf.predict(img_repr)
+            return self.clf.predict(img_repr)[0]
         return None
 
 classification_algorithms = {

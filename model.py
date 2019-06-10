@@ -20,7 +20,10 @@ class Model:
 
     def predict(self, images):
         img_repr = self.__get_images_reprezentation__(images)
-        return self.classifier.predict(img_repr)
+        pred = []
+        for i in range(len(img_repr)):
+            pred.append(self.classifier.predict(img_repr[i:i+1]))
+        return pred
 
     def __get_images_reprezentation__(self, images):
         images_reprezentation = []
