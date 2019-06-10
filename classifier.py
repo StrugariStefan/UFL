@@ -2,11 +2,8 @@ import pickle
 from ab_llloyds import algorithm1
 import pickle
 from abc import ABCMeta, abstractmethod
-
-class Model:
-    def __init__(self, classifier, feature_learner):
-        self.classifier = classifier
-        self.feature_learner = feature_learner
+import time
+import warnings
 
 class IClassifier:
     __metaclass__ = ABCMeta
@@ -15,6 +12,8 @@ class IClassifier:
     def __init__(self, class_name, name = None):
         self.name = name
         self.class_name = class_name
+        self.clf = None
+        self.accuracy = None
 
     @classmethod
     def version(self): return "1.0"
@@ -43,7 +42,11 @@ class IClassifier:
 
     @abstractmethod
     def __call__(self, x_train, y_train, x_test, y_test, feature_learner): raise NotImplementedError
-        
+
+    @abstractmethod
+    def predict(self, img_repr): raise NotImplementedError
+
+
 class Lloyds(IClassifier):
     def __init__(self, name = None):
         super().__init__(self.__class__.__name__, name)
@@ -84,39 +87,55 @@ class Lloyds(IClassifier):
 
         return min_hamming_distance / len(x)
 
+    def predict(self, img_repr):
+        pass
+
 class Svc(IClassifier):
 
     def __init__(self, c_range = [1.0, 1e-1, 1e-2, 1e-3], name = None):
         super().__init__(self.__class__.__name__, name)
         self.c_range = c_range
+        self.clf = None
+        self.accuracy = None
 
-    def __call__(self, x_train, y_train, x_test, y_test, feature_learner):
+    def __call__(self, x_train, y_train, x_test, y_test):
         from sklearn.svm import LinearSVC
 
         max_score = 0
         best_clf = None
         best_c = 1.0
         for c in self.c_range:
-            print ("SVC started, for C = " + str(c) + " ...")
+            # print ("SVC started, for C = " + str(c) + " ...")
             start_time = time.time()
-            clf = LinearSVC(C = c)
-            clf.fit(x_train, y_train)
 
-            y_pred = clf.predict(x_test)
-            score = sum(y_pred == y_test)
-            print ("Timp: (s)", time.time() - start_time)
-            print ("SVC ended")
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                clf = LinearSVC(C = c)
+                clf.fit(x_train, y_train)
 
-            print ("Score: " + str(score))
+                y_pred = clf.predict(x_test)
+                score = sum(y_pred == y_test)
+            # print ("Timp: (s)", time.time() - start_time)
+            # print ("SVC ended")
+
+            # print ("Score: " + str(score))
             if score > max_score:
                 max_score = score
                 best_clf = clf
                 best_c = c
-        self.__save_model__(Model(best_clf, feature_learner))
+        # self.__save_model__(Model(best_clf, feature_learner))
+
+        self.clf, self.accuracy = best_clf, max_score / y_test.shape[0]
 
         return (max_score / y_test.shape[0])
 
+    def predict(self, img_repr):
+        if self.clf != None:
+            return self.clf.predict(img_repr)
+        return None
+
 classification_algorithms = {
     "svc": Svc,
-    "lloyds": Lloyds
+    # "lloyds": Lloyds
+    # "logisticRegression": 
 }

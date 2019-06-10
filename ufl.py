@@ -10,6 +10,8 @@ from utils import Persistance
 from utils import reshape
 
 from feature_learner import kernel
+from classifier import classification_algorithms
+from model import Model
 
 class NumberValidator(Validator):
     def validate(self, document):
@@ -108,6 +110,27 @@ extractfeatures_questions2 = [
     },
 ]
 
+trainmodel_questions = [
+    {
+        'type': 'checkbox',
+        'message': 'Select features to use for building the classifier',
+        'name': 'features',
+        'choices': [
+
+        ],
+        'validate': lambda answer: 'You must choose at least one set of image reprezentations' \
+            if len(answer) == 0 else True
+    },
+    {
+        'type': 'checkbox',
+        'name': 'classalg',
+        'message': 'Choose linear classifier',
+        'choices': [{'name':c} for c in classification_algorithms.keys()],
+        'validate': lambda answer: 'You must choose at least one linear classifier' \
+            if len(answer) == 0 else True
+    },
+]
+
 def preprocess():
     files = get_files("datasets") 
     preprocess_questions[1]['choices'] = files
@@ -198,8 +221,41 @@ def extractfeatures():
         data = FeatureExtractor()(x_test_raw, kernel[answers2['kernel']](final_centroids), k, receptive_field_size, stride)
         Persistance("repr_test").save(data, answers2['centroids'], suffix, kernel = answers2['kernel'])
 
-def trainmodel()
-    pass
+def trainmodel():
+    files = get_files("repr_train") 
+    trainmodel_questions[0]['choices'] = [{"name": f} for f in files]
+    answers = prompt(trainmodel_questions, style=style)
+    
+    for feature_set in answers['features']:
+        train_features, arguments = Persistance('repr_train').load(feature_set, '')
+        test_features, _ = Persistance('repr_test').load(feature_set, '')
+        
+        files = get_files("datasets") 
+        dataset = [f for f in files if feature_set.startswith(f)][0]
+        data, _ = Persistance("datasets").load(dataset, "")
+
+        files = get_files("patches")
+        patch_batch = [f for f in files if feature_set.startswith(f)][0]
+        _, patch_args = Persistance("patches").load(patch_batch, "")
+
+        files = get_files("centroids")
+        centroids = [f for f in files if feature_set.startswith(f)][0]
+        (final_centroids, _, _), _ = Persistance("centroids").load(centroids, "")
+        
+        feature_learner = kernel[arguments['kernel']](final_centroids)
+        k = len(final_centroids)
+        receptive_field_size = patch_args['receptive_field_size']
+        stride = patch_args['stride']
+
+        for classifier in answers['classalg']:
+            suffix = "_" + classifier
+            classalg = classification_algorithms[classifier]()
+            score = classalg(train_features, data['y_train'], test_features, data['y_test'])
+            model = Model(classalg, feature_learner, train_features, test_features, data['x_train_raw'], data['y_train'], data['x_test_raw'], data['y_test'], k, receptive_field_size, stride)
+            Persistance("models").save(model, feature_set, suffix)
+
+
+
 
 def get_files(dir):
     from os import listdir

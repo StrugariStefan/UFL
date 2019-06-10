@@ -4,3 +4,5 @@ datasets/
 patches/
 repr_test/
 repr_train/
+models/
+test_images/
