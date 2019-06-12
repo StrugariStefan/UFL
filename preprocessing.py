@@ -3,6 +3,7 @@ import time
 from progress_bar import printProgressBar
 from utils import identity_function, reshape
 import random
+import tensorflow as tf
 
 def rgb2gray(rgb_images):
     return np.dot(rbg_images[...,:3], [0.2989, 0.5870, 0.1140])
@@ -13,6 +14,14 @@ def normalize(images):
     
     images_norm = np.float32(images_norm)
     return images_norm
+
+def tf_whitening(images):
+    sess = tf.Session()
+    img = None
+    with sess.as_default():
+        img = tf.map_fn(lambda image: tf.image.per_image_standardization(image) if len(image.shape) == 3 else image, images)
+        img = img.eval()
+    return img
 
 def whiten_images(images):
     shape = images.shape[1:]
@@ -72,5 +81,6 @@ def extract_random_patches(images, nextf, receptive_field_size = 6, stride = 1, 
 
 preprocessing_algorithms = {
     "whitening": whiten_images,
-    "nothing": identity_function
+    "nothing": identity_function,
+    "tf_whitening": tf_whitening 
 }

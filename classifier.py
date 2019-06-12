@@ -14,6 +14,7 @@ class IClassifier:
         self.class_name = class_name
         self.clf = None
         self.accuracy = None
+        self.best_c = None
 
     @classmethod
     def version(self): return "1.0"
@@ -92,7 +93,7 @@ class Lloyds(IClassifier):
 
 class Svc(IClassifier):
 
-    def __init__(self, c_range = [1.0, 1e-1, 1e-2, 1e-3], name = None):
+    def __init__(self, c_range = [1.0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8], name = None):
         super().__init__(self.__class__.__name__, name)
         self.c_range = c_range
         self.clf = None
@@ -132,7 +133,7 @@ class Svc(IClassifier):
                 
         # self.__save_model__(Model(best_clf, feature_learner))
 
-        self.clf, self.accuracy = best_clf, max_score / y_test.shape[0]
+        self.clf, self.accuracy, self.best_c = best_clf, max_score / y_test.shape[0], best_c
 
         return (max_score / y_test.shape[0])
 

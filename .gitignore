@@ -6,6 +6,17 @@ repr_test/
 repr_train/
 models/
 test_images/
+test_images_cifar10/
+test_images_norb/
+small_norb/
+mnist_example/
+cifar10_example/
+cmd_i_ex2.py
+command_line_interface.py
+mnist.py
+norb.py
+cifar10.py
+load_images.py
 *.ipynb
 .ipynb_checkpoints/
 ModelTest.ipynb

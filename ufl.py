@@ -5,6 +5,8 @@ from pprint import pprint
 from PyInquirer import style_from_dict, Token, prompt
 from PyInquirer import Validator, ValidationError
 import click
+import os
+import numpy as np
 
 from utils import Persistance
 from utils import reshape
@@ -14,15 +16,33 @@ from classifier import classification_algorithms
 from model import Model
 
 from load_images import load_images
+from load_images import load_labels
 
 class NumberValidator(Validator):
     def validate(self, document):
         try:
             int(document.text)
+            if int(document.text) < 0:
+                raise ValidationError(
+                    message='Please enter a positive number',
+                    cursor_position=len(document.text))
         except ValueError:
             raise ValidationError(
                 message='Please enter a number',
                 cursor_position=len(document.text))  # Move cursor to end
+
+class FloatValidator(Validator):
+    def validate(self, document):
+        try:
+            float(document.text)
+            if float(document.text) < 0 or float(document.text) > 1:
+                raise ValidationError(
+                    message='Please enter a number between 0 and 1',
+                    cursor_position=len(document.text))
+        except ValueError:
+            raise ValidationError(
+                message='Please enter a float number',
+                cursor_position=len(document.text)) 
 
 style = style_from_dict({
     Token.QuestionMark: '#E91E63 bold',
@@ -34,16 +54,16 @@ style = style_from_dict({
 
 preprocess_questions = [
     {
-        'type': 'confirm',
-        'name': 'toBeWhiten',
-        'message': 'Apply whitening to patches?',
-        'default': False
-    },
-    {
         'type': 'rawlist',
         'name': 'dataset',
         'message': 'Choose a dataset',
         'choices': []
+    },
+    {
+        'type': 'confirm',
+        'name': 'toBeWhiten',
+        'message': 'Apply whitening to patches?',
+        'default': False
     },
     {
         'type': 'input',
@@ -58,6 +78,13 @@ preprocess_questions = [
         'message': 'Set stride',
         'validate': NumberValidator,
         'filter': lambda val: int(val)
+    },
+    {
+        'type': 'input',
+        'name': 'pp',
+        'message': 'Set patching probability',
+        'validate': FloatValidator,
+        'filter': lambda val: float(val)
     },
     {
         'type': 'confirm',
@@ -143,14 +170,57 @@ predict_questions = [
     },
 ]
 
+loaddata_questions = [
+    {
+        'type': 'input',
+        'name': 'dataset_name',
+        'message': 'Type a name, to identify the dataset',
+        'validate': lambda document: 'Name should not be empty' \
+            if len(document) == 0 else True
+    },
+    {
+        'type': 'input',
+        'name': 'width',
+        'message': 'Set images width',
+        'validate': NumberValidator,
+        'filter': lambda val: int(val)
+    },
+    {
+        'type': 'input',
+        'name': 'height',
+        'message': 'Set images height',
+        'validate': NumberValidator,
+        'filter': lambda val: int(val)
+    },
+]
+
+loaddata_questions2 = [
+    {
+        'type': 'confirm',
+        'name': 'replace',
+        'message': 'Dataset already exists. Do you want to replace it?',
+        'default': False
+    },
+]
+
+remove_questions = [
+    {
+        'type': 'list',
+        'name': 'dataset',
+        'message': 'Choose dataset for removal',
+        'choices': [],
+        'filter': lambda val: val.lower()
+    },
+]
+
 def preprocess():
     files = get_files("datasets") 
-    preprocess_questions[1]['choices'] = files
+    preprocess_questions[0]['choices'] = files
     answers = prompt(preprocess_questions, style=style)
 
     from preprocessing import extract_random_patches, preprocessing_algorithms
     x_train_raw = Persistance('datasets').load(answers['dataset'], '')[0]['x_train_raw']
-    nextf = preprocessing_algorithms['whitening'] if answers['toBeWhiten'] else preprocessing_algorithms['nothing']
+    nextf = preprocessing_algorithms['tf_whitening'] if answers['toBeWhiten'] else preprocessing_algorithms['nothing']
     whitening_s = 'w' if answers['toBeWhiten'] else 'n'
 
     suffix = '_' + whitening_s + '_rfs' + str(answers['rfs']) + '_s' + str(answers['s'])
@@ -158,10 +228,10 @@ def preprocess():
         try:
             data, args = Persistance('patches').load(answers['dataset'], suffix)
         except FileNotFoundError:
-            data = extract_random_patches(x_train_raw, nextf, receptive_field_size = answers['rfs'], stride = answers['s'])
+            data = extract_random_patches(x_train_raw, nextf, receptive_field_size = answers['rfs'], stride = answers['s'], patching_probability = answers['pp'])
             Persistance('patches').save(data, answers['dataset'], suffix, receptive_field_size = answers['rfs'], stride = answers['s'], whitening = answers['toBeWhiten'])
     else:
-        data = extract_centroids(x_train_raw, nextf, receptive_field_size = answers['rfs'], stride = answers['s'])
+        data = extract_random_patches(x_train_raw, nextf, receptive_field_size = answers['rfs'], stride = answers['s'], patching_probability = answers['pp'])
         Persistance('patches').save(data, answers['dataset'], suffix, receptive_field_size = answers['rfs'], stride = answers['s'], whitening = answers['toBeWhiten'])
 
 
@@ -213,11 +283,11 @@ def extractfeatures():
     data, arguments = Persistance("centroids").load(answers2['centroids'], "")
     final_centroids = data[0]
     k = arguments['k']
-    print (final_centroids.shape)
+    # print (final_centroids.shape)
 
-    print (k)
-    print (receptive_field_size)
-    print (stride)
+    # print (k)
+    # print (receptive_field_size)
+    # print (stride)
 
 
     suffix = "_" + answers2['kernel']
@@ -263,7 +333,11 @@ def trainmodel():
             suffix = "_" + classifier
             classalg = classification_algorithms[classifier]()
             score = classalg(train_features, data['y_train'], test_features, data['y_test'], True)
-            model = Model(classalg, feature_learner, train_features, test_features, data['x_train_raw'], data['y_train'], data['x_test_raw'], data['y_test'], k, receptive_field_size, stride)
+            model = Model(classalg, feature_learner, train_features, test_features, data['x_train_raw'], data['y_train'], data['x_test_raw'], data['y_test'], k, receptive_field_size, stride, data['labels'])
+            print (feature_set)
+            print ("Training accuracy: " + str(model.classifier.train_score))
+            print ("Validation accuracy: " + str(model.classifier.accuracy))
+            
             Persistance("models").save(model, feature_set, suffix)
 
 
@@ -274,19 +348,81 @@ def predict(path):
     
     model, _ = Persistance("models").load(answers['model'], '')
 
+    print ("Training accuracy: " + str(model.classifier.train_score))
+    print ("Validation accuracy: " + str(model.classifier.accuracy))
+
     width, height = model.x_train.shape[1:3]
 
-    images, files = load_images(path, width, height)
+    images, files = load_images(path, width, height, to_resize = True)
     
     predictions = dict()
 
     if len(images) > 0:
         y_pred = model.predict(images)
         for i, f in enumerate(files):
-            predictions[f] = y_pred[i]
+            predictions[f] = model.labels[y_pred[i]]
 
         pprint(predictions)
 
+def loaddata(xtp, xtep, ytp, ytep, lp):
+    answers = prompt(loaddata_questions, style=style)
+    files = get_files("datasets") 
+    
+    if answers['dataset_name'] in files:
+        answers2 = prompt(loaddata_questions2, style=style)
+        if answers2['replace'] == False:
+            return
+
+
+
+    x_train_raw, _ = load_images(xtp, answers['width'], answers['height'], to_resize=True)
+    x_test_raw, _ = load_images(xtep, answers['width'], answers['height'], to_resize=True)
+    
+    # print (x_train_raw.shape)
+    # print (x_test_raw.shape)
+
+    y_train = np.array(load_labels(ytp))
+    y_test = np.array(load_labels(ytep))
+    labels = load_labels(lp, type=str)
+
+    # print (y_train.shape)
+    # print(y_test.shape)
+    # print (labels)
+
+    data = dict()
+    data['x_train_raw'] = x_train_raw
+    data['x_test_raw'] = x_test_raw
+    data['y_train'] = y_train
+    data['y_test'] = y_test
+    data['labels'] = labels
+
+    Persistance("datasets").save(data, answers['dataset_name'], "")
+
+def remove():
+    files = get_files("datasets")
+    remove_questions[0]['choices'] = files
+    answers = prompt(remove_questions, style=style)
+    
+    remove_files("patches", answers['dataset'])
+    remove_files("alfas", answers['dataset'])
+    remove_files("centroids", answers['dataset'])
+    remove_files("repr_train", answers['dataset'])
+    remove_files("repr_test", answers['dataset'])
+    remove_files("models", answers['dataset'])
+
+
+
+def remove_files(dirpath, prefix):
+    if not os.path.isdir(dirpath):
+        raise NotADirectoryError
+
+    for file in os.listdir(dirpath):
+        if file.startswith(prefix):
+            os.remove(os.path.join(dirpath, file))
+
+def is_dir(dir): return os.path.isdir(dir)
+def is_file(file): return os.path.isfile(file)
+def is_csv(file): return os.path.basename(file).lower().endswith(".csv")
 
 def get_files(dir):
     from os import listdir
@@ -295,10 +431,37 @@ def get_files(dir):
     return files
 
 @click.command()
-@click.option('-c', '-command', type = click.Choice(['preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict']))
+@click.option('-c', '-command', type = click.Choice(['loaddata', 'remove', 'preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict']))
 @click.option('-p', '-path', type = str)
-def main(c, p):
-    if c == 'preprocess':
+@click.option('-xtp', '-x_train_path', type = str)
+@click.option('-ytp', '-y_train_path', type = str)
+@click.option('-xtep', '-x_test_path', type = str)
+@click.option('-ytep', '-y_test_path', type = str)
+@click.option('-lp', '-labels_path', type = str)
+def main(c, p, xtp, ytp, xtep, ytep, lp):
+    if c == 'loaddata':
+        if xtp == None or ytp == None or xtep == None or ytep == None or lp == None:
+            print ("Specify path to train and test images directories,train and test labels files and the labels semnification file...\n\t-xtp\n\t--x_train_path\n\n\t-ytp\n\t--y_train_path\n\n\t-xtep\n\t--x_test_path\n\n\t-ytep\n\t--y_test_path\n\n\t-lp\n\t--labels_path\n")
+            return
+        if is_dir(xtp) == False:
+            print ("x train path is not a valid directory path")
+            return
+        if is_dir(xtep) == False:
+            print ("x test path is not a valid directory path")
+            return
+        if is_file(ytp) == False or is_csv(ytp) == False:
+            print ("y train path is not a valid csv file path")
+            return
+        if is_file(ytep) == False or is_csv(ytep) == False:
+            print ("y test path is not a valid csv file path")
+            return
+        if is_file(lp) == False or is_csv(lp) == False:
+            print ("labels path is not a valid csv file path")
+            return
+        loaddata(xtp, xtep, ytp, ytep, lp)
+    elif c == 'remove':
+        remove()
+    elif c == 'preprocess':
         preprocess()
     elif c == 'pretrain':
         pretrain()
@@ -314,8 +477,6 @@ def main(c, p):
             predict(p)
         except NotADirectoryError:
             print ("Directory doesn't exist")
-    
-
 
 if __name__ == "__main__":
     main()

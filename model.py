@@ -5,7 +5,7 @@ from operator import mul
 import time
 
 class Model:
-    def __init__(self, classifier, feature_learner, train_reprezentation, test_reprezentation, x_train, y_train, x_test, y_test, k, receptive_field_size, stride):
+    def __init__(self, classifier, feature_learner, train_reprezentation, test_reprezentation, x_train, y_train, x_test, y_test, k, receptive_field_size, stride, labels):
         self.classifier = classifier
         self.feature_learner = feature_learner
         self.train_reprezentation = train_reprezentation
@@ -17,6 +17,7 @@ class Model:
         self.receptive_field_size = receptive_field_size
         self.stride = stride
         self.k = k
+        self.labels = labels
 
     def predict(self, images):
         img_repr = self.__get_images_reprezentation__(images)
