@@ -337,6 +337,7 @@ def trainmodel():
             print (feature_set)
             print ("Training accuracy: " + str(model.classifier.train_score))
             print ("Validation accuracy: " + str(model.classifier.accuracy))
+            print ("Best regularization parameter: " + str(model.classifier.best_c))
             
             Persistance("models").save(model, feature_set, suffix)
 
@@ -403,6 +404,7 @@ def remove():
     remove_questions[0]['choices'] = files
     answers = prompt(remove_questions, style=style)
     
+    remove_files("datasets", answers['dataset'])
     remove_files("patches", answers['dataset'])
     remove_files("alfas", answers['dataset'])
     remove_files("centroids", answers['dataset'])
@@ -417,6 +419,8 @@ def remove_files(dirpath, prefix):
         raise NotADirectoryError
 
     for file in os.listdir(dirpath):
+        if dirpath == "datasets":
+            print (file, prefix)
         if file.startswith(prefix):
             os.remove(os.path.join(dirpath, file))
 

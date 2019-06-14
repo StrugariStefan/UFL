@@ -21,4 +21,5 @@ load_images.py
 .ipynb_checkpoints/
 ModelTest.ipynb
 debug.log
+sample_test.py
 .ipynb_checkpoints/ModelTest-checkpoint.ipynb

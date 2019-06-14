@@ -7,7 +7,7 @@ def binary_search(C, A, V, d, epsilon, instance_index, zt, distances, last = Non
     alfa = (A[1] + A[0]) / 2
     intervals, V, C_prim, _ = d_alfa_sample(C[:], V, d, alfa, False, distances = distances)
     # print ("Alfa", zt, intervals[instance_index], A)
-    if abs(intervals[instance_index] - zt) < epsilon or last == intervals[instance_index]:
+    if abs(intervals[instance_index] - zt) < epsilon or (abs(last - intervals[instance_index]) < epsilon if last != None else False):
         return round(alfa, floor(abs(log10(epsilon))))
     elif intervals[instance_index] < zt:
         return binary_search(C, (alfa, A[1]), V, d, epsilon, instance_index, zt, distances, intervals[instance_index])
