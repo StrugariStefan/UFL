@@ -27,7 +27,10 @@ def dynamic_configure(V, d, k, m):
     print ("Pre-search faze...")
     start_time = time.time()
     # progress_bar.printProgressBar(0, m - 1, prefix = 'Progress:', suffix = 'Complete', length = 50)
+    
+    print("dynamic configuration beginning...")
     for i in range(m):
+        print ("i = " + str(i))
         Z = np.random.uniform(0.0, 1.0, k)
         alfa_interval_generator = algorithm2(V = V[np.asarray(list(xxs[i]))], d = d, k = k, Z = Z, alfa_h = alfa_h, epsilon = epsilon)
 
@@ -45,6 +48,7 @@ def dynamic_configure(V, d, k, m):
     print ("Computing best alfa parameter...")
     # progress_bar.printProgressBar(0, len(alfa_breakpoints), prefix = 'Progress:', suffix = 'Complete', length = 50)
     for alfa in alfa_breakpoints:
+        print ("j = " + str(j))
         scoreCH = [0 for _ in range(m)]
         for i in range(m):
             centroids, voronoi_tiling, _ = algorithm1(V = V[np.asarray(list(xxs[i]))], d = d, k = k, alfa = alfa,beta = 2, sum_of_squared_distances = False)
@@ -65,4 +69,4 @@ def dynamic_configure(V, d, k, m):
     return best_alfa
 
 def extract_centroids(V, d, k, alpha, beta):
-    return algorithm1(V, d, k, alpha, beta, verbrose = False)
+    return algorithm1(V, d, k, alpha, beta, verbrose = True)

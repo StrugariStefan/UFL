@@ -76,7 +76,10 @@ def extract_random_patches(images, nextf, receptive_field_size = 6, stride = 1, 
     print (patches.shape)
     
     print ("Timp: (s)", time.time() - start_time)
-    return nextf(normalize(patches))
+    patches = np.float32(patches / 255.)
+    for func in nextf:
+        patches = func(patches)
+    return patches
 
 
 preprocessing_algorithms = {

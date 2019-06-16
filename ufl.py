@@ -54,10 +54,11 @@ style = style_from_dict({
 
 preprocess_questions = [
     {
-        'type': 'rawlist',
+        'type': 'list',
         'name': 'dataset',
         'message': 'Choose a dataset',
-        'choices': []
+        'choices': [],
+        'filter': lambda val: val.lower()
     },
     {
         'type': 'confirm',
@@ -96,10 +97,11 @@ preprocess_questions = [
 
 pretrain_questions = [
     {
-        'type': 'rawlist',
+        'type': 'list',
         'name': 'patch',
         'message': 'Choose a patches batch',
-        'choices': []
+        'choices': [],
+        'filter': lambda val: val.lower()
     },
     {
         'type': 'input',
@@ -117,19 +119,21 @@ pretrain_questions = [
 ]
 extractfeatures_questions1 = [
     {
-        'type': 'rawlist',
+        'type': 'list',
         'name': 'dataset',
         'message': 'Choose dataset',
-        'choices': []
+        'choices': [],
+        'filter': lambda val: val.lower()
     },
 ]
 
 extractfeatures_questions2 = [
     {
-        'type': 'rawlist',
+        'type': 'list',
         'name': 'centroids',
         'message': 'Choose centroid set',
-        'choices': []
+        'choices': [],
+        'filter': lambda val: val.lower()
     },
     {
         'type': 'rawlist',
@@ -220,7 +224,7 @@ def preprocess():
 
     from preprocessing import extract_random_patches, preprocessing_algorithms
     x_train_raw = Persistance('datasets').load(answers['dataset'], '')[0]['x_train_raw']
-    nextf = preprocessing_algorithms['tf_whitening'] if answers['toBeWhiten'] else preprocessing_algorithms['nothing']
+    nextf = [preprocessing_algorithms['tf_whitening'], preprocessing_algorithms['whitening']] if answers['toBeWhiten'] else [preprocessing_algorithms['nothing']]
     whitening_s = 'w' if answers['toBeWhiten'] else 'n'
 
     suffix = '_' + whitening_s + '_rfs' + str(answers['rfs']) + '_s' + str(answers['s'])
@@ -330,6 +334,13 @@ def trainmodel():
         stride = patch_args['stride']
 
         for classifier in answers['classalg']:
+
+            print (data['x_train_raw'].shape)
+            print (data['x_test_raw'].shape)
+            print (data['y_train'].shape)
+            print (data['y_test'].shape)
+            print (data['labels'])
+
             suffix = "_" + classifier
             classalg = classification_algorithms[classifier]()
             score = classalg(train_features, data['y_train'], test_features, data['y_test'], True)
