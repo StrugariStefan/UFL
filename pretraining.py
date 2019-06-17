@@ -69,4 +69,4 @@ def dynamic_configure(V, d, k, m):
     return best_alfa
 
 def extract_centroids(V, d, k, alpha, beta):
-    return algorithm1(V, d, k, alpha, beta, verbrose = True)
+    return algorithm1(V, d, k, alpha, beta, verbrose = True, sum_of_squared_distances = True if beta != 2 else False)

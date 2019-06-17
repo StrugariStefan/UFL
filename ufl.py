@@ -1,5 +1,6 @@
 from __future__ import print_function, unicode_literals
 import regex
+import multiprocessing
 
 from pprint import pprint
 from PyInquirer import style_from_dict, Token, prompt
@@ -12,11 +13,14 @@ from utils import Persistance
 from utils import reshape
 
 from feature_learner import kernel
+from ab_llloyds import local_search_procedures, initialization_procedures
 from classifier import classification_algorithms
 from model import Model
 
 from load_images import load_images
 from load_images import load_labels
+
+from tabulate import tabulate
 
 class NumberValidator(Validator):
     def validate(self, document):
@@ -113,10 +117,27 @@ pretrain_questions = [
     {
         'type': 'confirm',
         'name': 'dynamicConfigure',
-        'message': 'Do dynamic configuration of alpha paramaeter?',
+        'message': 'Do dynamic configuration of alpha parameter?',
         'default': False
     },
 ]
+
+pretrain_questions2 = [
+    {
+        'type': 'rawlist',
+        'name': 'init',
+        'message': 'Select the initialization procedure',
+        'choices': initialization_procedures.keys()
+    },
+    {
+        'type': 'rawlist',
+        'name': 'localsearch',
+        'message': 'Select the local search procedure',
+        'choices': local_search_procedures.keys()
+    },
+]
+
+
 extractfeatures_questions1 = [
     {
         'type': 'list',
@@ -217,6 +238,16 @@ remove_questions = [
     },
 ]
 
+getbyaccuracy_questions = [
+    {
+        'type': 'list',
+        'name': 'dataset',
+        'message': 'Choose a dataset',
+        'choices': [],
+        'filter': lambda val: val.lower()
+    },
+]
+
 def preprocess():
     files = get_files("datasets") 
     preprocess_questions[0]['choices'] = files
@@ -248,19 +279,21 @@ def pretrain():
     from pretraining import dynamic_configure, extract_centroids
     suffix = '_k' + str(answers['k'])
     if answers['dynamicConfigure'] == True:
+        beta = 2
         try:
             alpha, arguments = Persistance('alfas').load(answers['patch'], suffix)
-            
         except FileNotFoundError:
             alpha = dynamic_configure(patches, 2, answers['k'], m = 11)
             Persistance('alfas').save(alpha, answers['patch'], suffix, k = answers['k'])
     else:
-        alpha = 2
-    suffix += "_alpha" + str(alpha)
+        answers2 = prompt(pretrain_questions2, style=style)
+        alpha = initialization_procedures[answers2['init']]
+        beta = local_search_procedures[answers2['localsearch']]
+    suffix += "_alpha" + str(alpha) + "_beta" + str(beta)
     try:
         data, arguments = Persistance('centroids').load(answers['patch'], suffix)
     except FileNotFoundError:
-        data = extract_centroids(patches, 2, answers['k'], alpha, 2)
+        data = extract_centroids(patches, 2, answers['k'], alpha, beta)
         Persistance('centroids').save(data, answers['patch'], suffix, k = answers['k'], alpha = alpha)
 
 def extractfeatures():
@@ -410,6 +443,23 @@ def loaddata(xtp, xtep, ytp, ytep, lp):
 
     Persistance("datasets").save(data, answers['dataset_name'], "")
 
+def get_by_accuracy():
+    files = get_files("datasets") 
+    getbyaccuracy_questions[0]['choices'] = files
+    answers = prompt(getbyaccuracy_questions, style=style)
+
+    files = get_files("models")
+
+    models_info = []
+    for file in files:
+        if file.startswith(answers['dataset']):
+            model, _ = Persistance("models").load(file, '')
+            models_info.append((file, model.classifier.train_score if model.classifier.train_score != None else '-', model.classifier.accuracy))
+
+    models_info.sort(key = lambda el: el[2] + 1e-5 * el[1], reverse = True)
+
+    print (tabulate(models_info, headers = ['Dataset', 'Train accuracy', 'Validation accuracy']))
+
 def remove():
     files = get_files("datasets")
     remove_questions[0]['choices'] = files
@@ -446,7 +496,7 @@ def get_files(dir):
     return files
 
 @click.command()
-@click.option('-c', '-command', type = click.Choice(['loaddata', 'remove', 'preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict']))
+@click.option('-c', '-command', type = click.Choice(['loaddata', 'remove', 'preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict', 'getbyaccuracy']))
 @click.option('-p', '-path', type = str)
 @click.option('-xtp', '-x_train_path', type = str)
 @click.option('-ytp', '-y_train_path', type = str)
@@ -474,6 +524,8 @@ def main(c, p, xtp, ytp, xtep, ytep, lp):
             print ("labels path is not a valid csv file path")
             return
         loaddata(xtp, xtep, ytp, ytep, lp)
+    elif c == 'getbyaccuracy':
+        get_by_accuracy()
     elif c == 'remove':
         remove()
     elif c == 'preprocess':
@@ -494,4 +546,5 @@ def main(c, p, xtp, ytp, xtep, ytep, lp):
             print ("Directory doesn't exist")
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main()

@@ -51,6 +51,7 @@ def algorithm1(V, d, k, alfa, beta, initial_centroids = None, T_max = 3, verbros
     else:
         C = initial_centroids
   
+    print (V.shape)
     # Phase 2: Lloyd's algorithm
     t = 0
     while t < T_max:
@@ -86,3 +87,16 @@ def algorithm1(V, d, k, alfa, beta, initial_centroids = None, T_max = 3, verbros
         print ("Timp: (s)", time.time() - start_time2)
     # print (clus_i)
     return np.asarray(C), Voronoi_tiling, clus_i
+
+
+local_search_procedures = {
+    'kmedian': 1,
+    'kmeans': 2,
+    'kcenters': 10
+}
+
+initialization_procedures = {
+    'random': 0,
+    'kmeans++ init': 2,
+    'farthest-first traversal': 20
+}

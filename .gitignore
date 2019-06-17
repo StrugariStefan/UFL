@@ -14,6 +14,8 @@ cifar10_example/
 mnist_example2000/
 cifar10_example2000/
 norb_example2000/
+build/
+dist/
 images/
 cmd_i_ex2.py
 command_line_interface.py

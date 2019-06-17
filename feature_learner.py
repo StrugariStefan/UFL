@@ -37,7 +37,7 @@ class KMeansHard(IFeatureLearner):
         self.final_centroids = final_centroids
 
     def __feature_learner__(self, receptive_field):
-        z = [(k, np.linalg.norm(np.subtract(receptive_field, centroid))) for k, centroid in enumerate(self.final_centroids)]
+        z = [(k, np.linalg.norm(np.subtract(receptive_field, centroid)) ** 2) for k, centroid in enumerate(self.final_centroids)]
         fk = [0 for k in range(len(self.final_centroids))]
         fk[min(z, key = lambda dist: dist[1])[0]] = 1
         return fk
