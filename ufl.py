@@ -22,6 +22,11 @@ from load_images import load_labels
 
 from tabulate import tabulate
 
+import csv
+from imageio import imwrite
+from math import log10, ceil
+import random
+
 class NumberValidator(Validator):
     def validate(self, document):
         try:
@@ -294,7 +299,7 @@ def pretrain():
         data, arguments = Persistance('centroids').load(answers['patch'], suffix)
     except FileNotFoundError:
         data = extract_centroids(patches, 2, answers['k'], alpha, beta)
-        Persistance('centroids').save(data, answers['patch'], suffix, k = answers['k'], alpha = alpha)
+        Persistance('centroids').save(data, answers['patch'], suffix, k = answers['k'], alpha = alpha, beta = beta)
 
 def extractfeatures():
     files = get_files("datasets") 
@@ -368,11 +373,11 @@ def trainmodel():
 
         for classifier in answers['classalg']:
 
-            print (data['x_train_raw'].shape)
-            print (data['x_test_raw'].shape)
-            print (data['y_train'].shape)
-            print (data['y_test'].shape)
-            print (data['labels'])
+            # print (data['x_train_raw'].shape)
+            # print (data['x_test_raw'].shape)
+            # print (data['y_train'].shape)
+            # print (data['y_test'].shape)
+            # print (data['labels'])
 
             suffix = "_" + classifier
             classalg = classification_algorithms[classifier]()
@@ -454,11 +459,111 @@ def get_by_accuracy():
     for file in files:
         if file.startswith(answers['dataset']):
             model, _ = Persistance("models").load(file, '')
-            models_info.append((file, model.classifier.train_score if model.classifier.train_score != None else '-', model.classifier.accuracy))
+            models_info.append((file, model.classifier.__class__.__name__, model.classifier.train_score if model.classifier.train_score != None else '-', model.classifier.accuracy))
 
-    models_info.sort(key = lambda el: el[2] + 1e-5 * el[1], reverse = True)
+    models_info.sort(key = lambda el: el[3] + 1e-5 * el[2], reverse = True)
 
-    print (tabulate(models_info, headers = ['Dataset', 'Train accuracy', 'Validation accuracy']))
+    print (tabulate(models_info, headers = ['Dataset', 'Classifier', 'Train accuracy', 'Validation accuracy']))
+
+base_dataset_questions = [
+    {
+        'type': 'input',
+        'name': 'train_sample',
+        'message': 'Select the train sample size',
+        'validate': NumberValidator,
+        'filter': lambda val: int(val)
+    },
+    {
+        'type': 'input',
+        'name': 'test_sample',
+        'message': 'Select the test sample size',
+        'validate': NumberValidator,
+        'filter': lambda val: int(val)
+    },
+]
+
+def load_base_dataset(dataset):
+    from base_datasets import dataset_name
+
+    ((x_train, y_train), (x_test, y_test)), labels = dataset_name[dataset]()
+
+    answers = prompt(base_dataset_questions, style=style)
+    
+    print (answers)
+
+    r1 = min(x_train.shape[0], answers['train_sample'])
+    r2 = min(x_test.shape[0], answers['test_sample'])
+
+    n1 = len(x_train)
+    x1 = {i for i in range(n1)}
+    xs1 = set(random.sample(x1, r1))
+
+    n2 = len(x_test)
+    x2 = {i for i in range(n2)}
+    xs2 = set(random.sample(x2, r2))
+
+    x_train_raw = x_train[np.array(list(xs1))]
+    x_test_raw = x_test[np.array(list(xs2))]
+    y_train = y_train[np.array(list(xs1))].flatten()
+    y_test = y_test[np.array(list(xs2))].flatten()
+
+    data = dict()
+    data['x_train_raw'] = x_train_raw
+    data['x_test_raw'] = x_test_raw
+    data['y_train'] = y_train
+    data['y_test'] = y_test
+    data['labels'] = labels
+
+    dir_path = str(r1) + dataset
+
+    p = Persistance("datasets")
+    p.save(data, dir_path, "")
+
+    if is_dir(dir_path) == False:
+        os.makedirs(dir_path)
+
+    xt_len = ceil(log10(len(x_train_raw)))
+
+    if is_dir(dir_path + "\\train") == False:
+            os.makedirs(dir_path + "\\train")
+
+    if is_dir(dir_path + "\\test") == False:
+        os.makedirs(dir_path + "\\test")
+    
+    for i, image in enumerate(x_train_raw):
+        istr = str(i)
+        imwrite(dir_path + '\\train\\' + istr.zfill(xt_len) + '.jpg', image)
+
+    xte_len = ceil(log10(len(x_test_raw)))    
+    for i, image in enumerate(x_test_raw):
+        istr = str(i)
+        imwrite(dir_path + '\\test\\' + istr.zfill(xte_len) + '.jpg', image)
+
+    train_labels = []
+    for i, label in enumerate(y_train):
+        train_labels.append(label)
+
+    with open(dir_path + '\\train.csv', 'w', newline='') as myfile:
+        wr = csv.writer(myfile)
+        wr.writerow(train_labels)
+
+    test_labels = []
+    for i, label in enumerate(y_test):
+        test_labels.append(label)
+
+    with open(dir_path + '\\test.csv', 'w', newline='') as myfile:
+        wr = csv.writer(myfile)
+        wr.writerow(test_labels)
+
+    with open(dir_path + '\\labels.csv', 'w', newline='') as myfile:
+        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+        wr.writerow(data['labels'])
+
+    # print (x_train.shape)
+    # print (x_test.shape)
+    # print (y_train.shape)
+    # print (y_test.shape)
+    # print (labels)
 
 def remove():
     files = get_files("datasets")
@@ -477,7 +582,7 @@ def remove():
 
 def remove_files(dirpath, prefix):
     if not os.path.isdir(dirpath):
-        raise NotADirectoryError
+        return
 
     for file in os.listdir(dirpath):
         if dirpath == "datasets":
@@ -496,7 +601,7 @@ def get_files(dir):
     return files
 
 @click.command()
-@click.option('-c', '-command', type = click.Choice(['loaddata', 'remove', 'preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict', 'getbyaccuracy']))
+@click.option('-c', '-command', type = click.Choice(['loaddata', 'remove', 'preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict', 'getbyaccuracy', 'mnist', 'norb', 'cifar10']))
 @click.option('-p', '-path', type = str)
 @click.option('-xtp', '-x_train_path', type = str)
 @click.option('-ytp', '-y_train_path', type = str)
@@ -504,7 +609,9 @@ def get_files(dir):
 @click.option('-ytep', '-y_test_path', type = str)
 @click.option('-lp', '-labels_path', type = str)
 def main(c, p, xtp, ytp, xtep, ytep, lp):
-    if c == 'loaddata':
+    if c in ['mnist', 'norb', 'cifar10']:    
+        load_base_dataset(c)
+    elif c == 'loaddata':
         if xtp == None or ytp == None or xtep == None or ytep == None or lp == None:
             print ("Specify path to train and test images directories,train and test labels files and the labels semnification file...\n\t-xtp\n\t--x_train_path\n\n\t-ytp\n\t--y_train_path\n\n\t-xtep\n\t--x_test_path\n\n\t-ytep\n\t--y_test_path\n\n\t-lp\n\t--labels_path\n")
             return

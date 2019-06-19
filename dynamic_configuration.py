@@ -8,7 +8,6 @@ def binary_search(C, A, V, d, epsilon, instance_index, zt, distances, last = Non
     intervals, V, C_prim, _ = d_alfa_sample(C[:], V, d, alfa, False, distances = distances)
     # print ("Alfa", zt, intervals[instance_index], A)
     if abs(intervals[instance_index] - zt) < epsilon or (abs(last - intervals[instance_index]) < epsilon if last != None else False):
-        print ("\tFinal")
         return round(alfa, floor(abs(log10(epsilon))))
     elif intervals[instance_index] < zt:
         return binary_search(C, (alfa, A[1]), V, d, epsilon, instance_index, zt, distances, intervals[instance_index])
@@ -43,8 +42,6 @@ def algorithm2(V, d, k, Z, alfa_h, epsilon, explicit = False):
         C, A = Q.get()
         t = len(C)
         z = Z[t]
-
-        print ("C = " + str(t))
         
         V_prim = V[:]
         

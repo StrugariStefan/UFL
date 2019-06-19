@@ -51,7 +51,6 @@ def algorithm1(V, d, k, alfa, beta, initial_centroids = None, T_max = 3, verbros
     else:
         C = initial_centroids
   
-    print (V.shape)
     # Phase 2: Lloyd's algorithm
     t = 0
     while t < T_max:

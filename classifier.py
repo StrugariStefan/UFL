@@ -142,8 +142,112 @@ class Svc(IClassifier):
             return self.clf.predict(img_repr)[0]
         return None
 
+class LogisticRegresssion(IClassifier):
+
+    def __init__(self, c_range = [1.0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8], name = None):
+        super().__init__(self.__class__.__name__, name)
+        self.c_range = c_range
+        self.clf = None
+        self.accuracy = None
+
+    def __call__(self, x_train, y_train, x_test, y_test, to_compute_training_error = False):
+        from sklearn.linear_model import LogisticRegression
+
+        max_score = 0
+        best_clf = None
+        best_c = 1.0
+        for c in self.c_range:
+            # print ("SVC started, for C = " + str(c) + " ...")
+            start_time = time.time()
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                clf = LogisticRegression(C = c)
+                clf.fit(x_train, y_train)
+
+                y_pred = clf.predict(x_test)
+                score = sum(y_pred == y_test)
+
+                if to_compute_training_error:
+                    y_pred_train = clf.predict(x_train)
+                    train_score = sum(y_pred_train == y_train)
+            # print ("Timp: (s)", time.time() - start_time)
+            # print ("SVC ended")
+
+            # print ("Score: " + str(score))
+            if score > max_score:
+                max_score = score
+                best_clf = clf
+                best_c = c
+                if to_compute_training_error:
+                    self.train_score = train_score / len(x_train)
+                
+        # self.__save_model__(Model(best_clf, feature_learner))
+
+        self.clf, self.accuracy, self.best_c = best_clf, max_score / y_test.shape[0], best_c
+
+        return (max_score / y_test.shape[0])
+
+    def predict(self, img_repr):
+        if self.clf != None:
+            return self.clf.predict(img_repr)[0]
+        return None
+
+
+class Knn(IClassifier):
+
+    def __init__(self, neighbors = range(1, 23, 2), name = None):
+        super().__init__(self.__class__.__name__, name)
+        self.neighbors = neighbors
+        self.clf = None
+        self.accuracy = None
+
+    def __call__(self, x_train, y_train, x_test, y_test, to_compute_training_error = False):
+        from sklearn.neighbors import KNeighborsClassifier
+
+        max_score = 0
+        best_clf = None
+        best_c = 1
+        for neighbors in self.neighbors:
+            # print ("SVC started, for C = " + str(c) + " ...")
+            start_time = time.time()
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                clf = KNeighborsClassifier(n_neighbors = neighbors)
+                clf.fit(x_train, y_train)
+
+                y_pred = clf.predict(x_test)
+                score = sum(y_pred == y_test)
+
+                if to_compute_training_error:
+                    y_pred_train = clf.predict(x_train)
+                    train_score = sum(y_pred_train == y_train)
+            # print ("Timp: (s)", time.time() - start_time)
+            # print ("SVC ended")
+
+            # print ("Score: " + str(score))
+            if score > max_score:
+                max_score = score
+                best_clf = clf
+                best_c = neighbors
+                if to_compute_training_error:
+                    self.train_score = train_score / len(x_train)
+                
+        # self.__save_model__(Model(best_clf, feature_learner))
+
+        self.clf, self.accuracy, self.best_c = best_clf, max_score / y_test.shape[0], best_c
+
+        return (max_score / y_test.shape[0])
+
+    def predict(self, img_repr):
+        if self.clf != None:
+            return self.clf.predict(img_repr)[0]
+        return None
+
 classification_algorithms = {
     "svc": Svc,
     # "lloyds": Lloyds
-    # "logisticRegression": 
+    "logisticRegression": LogisticRegresssion,
+    "knn": Knn
 }

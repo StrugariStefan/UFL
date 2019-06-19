@@ -14,9 +14,14 @@ cifar10_example/
 mnist_example2000/
 cifar10_example2000/
 norb_example2000/
+norb_example200/
+500cifar10/
+500mnist/
 build/
 dist/
 images/
+samples/
+examples/
 cmd_i_ex2.py
 command_line_interface.py
 mnist.py
