@@ -19,6 +19,7 @@ from model import Model
 
 from load_images import load_images
 from load_images import load_labels
+from pretraining import performance_test, cost_function
 
 from tabulate import tabulate
 
@@ -465,6 +466,43 @@ def get_by_accuracy():
 
     print (tabulate(models_info, headers = ['Dataset', 'Classifier', 'Train accuracy', 'Validation accuracy']))
 
+performance_test_questions = [
+    {
+        'type': 'list',
+        'name': 'patch',
+        'message': 'Choose a patches batch',
+        'choices': [],
+        'filter': lambda val: val.lower()
+    },
+    {
+        'type': 'input',
+        'name': 'k',
+        'message': 'Set number of centroids',
+        'validate': NumberValidator,
+        'filter': lambda val: int(val)
+    },
+    {
+        'type': 'rawlist',
+        'name': 'costfunc',
+        'message': 'Choose cost function',
+        'choices': cost_function.keys()
+    },
+]
+
+def take_perfomance_test():
+    files = get_files("patches") 
+    performance_test_questions[0]['choices'] = files
+    answers = prompt(performance_test_questions, style=style)
+    
+    patches = reshape(Persistance('patches').load(answers['patch'],'')[0])
+    suffix = '_k' + str(answers['k'])
+
+    try:
+        costs, arguments = Persistance('performance').load(answers['patch'], suffix)
+    except FileNotFoundError:
+        costs = performance_test(patches, 2, answers['k'], answers['costfunc'])
+        Persistance('performance').save(alpha, answers['patch'], suffix, k = answers['k'])
+
 base_dataset_questions = [
     {
         'type': 'input',
@@ -601,7 +639,7 @@ def get_files(dir):
     return files
 
 @click.command()
-@click.option('-c', '-command', type = click.Choice(['loaddata', 'remove', 'preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict', 'getbyaccuracy', 'mnist', 'norb', 'cifar10']))
+@click.option('-c', '-command', type = click.Choice(['loaddata', 'performance', 'remove', 'preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict', 'getbyaccuracy', 'mnist', 'norb', 'cifar10']))
 @click.option('-p', '-path', type = str)
 @click.option('-xtp', '-x_train_path', type = str)
 @click.option('-ytp', '-y_train_path', type = str)
@@ -611,6 +649,8 @@ def get_files(dir):
 def main(c, p, xtp, ytp, xtep, ytep, lp):
     if c in ['mnist', 'norb', 'cifar10']:    
         load_base_dataset(c)
+    elif c == 'performance':
+        take_perfomance_test()
     elif c == 'loaddata':
         if xtp == None or ytp == None or xtep == None or ytep == None or lp == None:
             print ("Specify path to train and test images directories,train and test labels files and the labels semnification file...\n\t-xtp\n\t--x_train_path\n\n\t-ytp\n\t--y_train_path\n\n\t-xtep\n\t--x_test_path\n\n\t-ytep\n\t--y_test_path\n\n\t-lp\n\t--labels_path\n")

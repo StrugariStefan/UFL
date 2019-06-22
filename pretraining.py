@@ -70,3 +70,49 @@ def dynamic_configure(V, d, k, m):
 
 def extract_centroids(V, d, k, alpha, beta):
     return algorithm1(V, d, k, alpha, beta, verbrose = True, sum_of_squared_distances = True if beta != 2 else False)
+    
+def kmeanscost(instances, centroids, voronoi_tiling, d, beta):
+    k = len(centroids)
+    final_sum = 0
+    for i in range(k):
+        dist_sum = 0
+        for x in voronoi_tiling[i]:
+            dist = np.linalg.norm(np.subtract(x, centroids[i]), d)
+            dist_sum += dist ** beta
+        final_sum += dist_sum
+
+    return final_sum ** (1/beta)
+
+def chfitness(instances, centroids, voronoi_tiling, d, beta):
+    k = len(centroids)
+    n = len(instances)
+    centroid = np.mean(instances, axis = 0)
+    traceW = sum([sum([np.linalg.norm(np.subtract(voronoi_tiling[i][j], centroids[i]), d) ** 2 for j in range(len(voronoi_tiling[i]))]) for i in range(k)])
+    traceB = sum([len(voronoi_tiling[i]) * np.linalg.norm(np.subtract(centroids[i], centroid)) for i in range(k)])
+    
+    return (traceB / (k - 1)) / (traceW / (n - k))
+
+
+def performance_test(V, d, k, cf):
+    alfa_min = 0
+    alfa_max = 20
+    beta_min = 1
+    beta_max = 10
+
+    alfa_step = (alfa_max - alfa_min) / 50
+    beta_step = (beta_max - beta_min) / 25
+
+    return_cost = []
+
+    for alfa in range(alfa_min, alfa_max + alfa_step, alfa_step):
+        for beta in range(beta_min, beta_max + beta_step, beta_step):
+            centroids, voronoi_tiling, _ = algorithm1(V, d, k, alfa, beta, verbrose = False, sum_of_squared_distances = True)
+            cost = cost_function[cf](V, centroids, voronoi_tiling, d, beta)
+            return_cost.append((alfa, beta, cost))
+
+    return cost_function
+
+cost_function = {
+    'ch': chfitness,
+    'kmeans': kmeanscost
+}
