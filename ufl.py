@@ -501,7 +501,8 @@ def take_perfomance_test():
         costs, arguments = Persistance('performance').load(answers['patch'], suffix)
     except FileNotFoundError:
         costs = performance_test(patches, 2, answers['k'], answers['costfunc'])
-        Persistance('performance').save(alpha, answers['patch'], suffix, k = answers['k'])
+        print (costs)
+        Persistance('performance').save(costs, answers['patch'], suffix, k = answers['k'])
 
 base_dataset_questions = [
     {

@@ -3,7 +3,7 @@ from dynamic_configuration import algorithm2
 from ab_llloyds import algorithm1
 from progress_bar import printProgressBar
 import numpy as np
-from math import floor
+from math import floor, ceil
 import random
 
 def dynamic_configure(V, d, k, m):
@@ -99,18 +99,21 @@ def performance_test(V, d, k, cf):
     beta_min = 1
     beta_max = 10
 
-    alfa_step = (alfa_max - alfa_min) / 50
-    beta_step = (beta_max - beta_min) / 25
+    alfa_step = (alfa_max - alfa_min) / 20
+    beta_step = (beta_max - beta_min) / 10
 
     return_cost = []
 
-    for alfa in range(alfa_min, alfa_max + alfa_step, alfa_step):
-        for beta in range(beta_min, beta_max + beta_step, beta_step):
-            centroids, voronoi_tiling, _ = algorithm1(V, d, k, alfa, beta, verbrose = False, sum_of_squared_distances = True)
+    for alfa in np.arange(alfa_min, alfa_max + alfa_step, alfa_step):
+        for beta in np.arange(beta_min, beta_max + beta_step, beta_step):
+            alfa = ceil(alfa * 100) / 100
+            beta = ceil(beta * 100) / 100
+            print (alfa, beta)
+            centroids, voronoi_tiling, _ = algorithm1(V, d, k, alfa, beta, verbrose = True, sum_of_squared_distances = True)
             cost = cost_function[cf](V, centroids, voronoi_tiling, d, beta)
             return_cost.append((alfa, beta, cost))
 
-    return cost_function
+    return return_cost
 
 cost_function = {
     'ch': chfitness,

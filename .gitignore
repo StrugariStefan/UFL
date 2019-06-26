@@ -5,6 +5,7 @@ patches/
 repr_test/
 repr_train/
 models/
+performance/
 test_images/
 test_images_cifar10/
 test_images_norb/
@@ -17,6 +18,7 @@ norb_example2000/
 norb_example200/
 500cifar10/
 500mnist/
+80mnist/
 build/
 dist/
 images/
@@ -33,4 +35,5 @@ load_images.py
 ModelTest.ipynb
 debug.log
 sample_test.py
+contor.py
 .ipynb_checkpoints/ModelTest-checkpoint.ipynb
