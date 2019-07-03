@@ -26,29 +26,21 @@ def dynamic_configure(V, d, k, m):
 
     print ("Pre-search faze...")
     start_time = time.time()
-    # progress_bar.printProgressBar(0, m - 1, prefix = 'Progress:', suffix = 'Complete', length = 50)
     
     print("dynamic configuration beginning...")
     for i in range(m):
-        # print ("i = " + str(i))
         Z = np.random.uniform(0.0, 1.0, k)
         alfa_interval_generator = algorithm2(V = V[np.asarray(list(xxs[i]))], d = d, k = k, Z = Z, alfa_h = alfa_h, epsilon = epsilon)
 
         for _, alfa_interval in alfa_interval_generator:
             alfa_breakpoints |= set(alfa_interval)
-            
-        # progress_bar.printProgressBar(i + 1, m - 1, prefix = 'Progress:', suffix = 'Complete', length = 50)
-
-    print (alfa_breakpoints)
 
     best_score = 0
     best_alfa = 0
 
     j = 0
     print ("Computing best alfa parameter...")
-    # progress_bar.printProgressBar(0, len(alfa_breakpoints), prefix = 'Progress:', suffix = 'Complete', length = 50)
     for alfa in alfa_breakpoints:
-        # print ("j = " + str(j))
         scoreCH = [0 for _ in range(m)]
         for i in range(m):
             centroids, voronoi_tiling, _ = algorithm1(V = V[np.asarray(list(xxs[i]))], d = d, k = k, alfa = alfa,beta = 2, sum_of_squared_distances = False)
@@ -61,8 +53,7 @@ def dynamic_configure(V, d, k, m):
         if average_score > best_score:
             best_score = average_score
             best_alfa = alfa
-
-        # progress_bar.printProgressBar(j + 1, len(alfa_breakpoints), prefix = 'Progress:', suffix = 'Complete', length = 50)        
+     
         j += 1
 
     print ("Timp: (s)", time.time() - start_time)
@@ -78,10 +69,10 @@ def kmeanscost(instances, centroids, voronoi_tiling, d, beta):
         dist_sum = 0
         for x in voronoi_tiling[i]:
             dist = np.linalg.norm(np.subtract(x, centroids[i]), d)
-            dist_sum += dist ** beta
+            dist_sum += dist ** 2
         final_sum += dist_sum
 
-    return final_sum ** (1/beta)
+    return final_sum ** (1/2)
 
 def chfitness(instances, centroids, voronoi_tiling, d, beta):
     k = len(centroids)
