@@ -6,7 +6,6 @@ from math import floor
 def binary_search(C, A, V, d, epsilon, instance_index, zt, distances, last = None):
     alfa = (A[1] + A[0]) / 2
     intervals, V, C_prim, _ = d_alfa_sample(C[:], V, d, alfa, False, distances = distances)
-    # print ("Alfa", zt, intervals[instance_index], A)
     if abs(intervals[instance_index] - zt) < epsilon or (abs(last - intervals[instance_index]) < epsilon if last != None else False):
         return round(alfa, floor(abs(log10(epsilon))))
     elif intervals[instance_index] < zt:
@@ -44,7 +43,6 @@ def algorithm2(V, d, k, Z, alfa_h, epsilon, explicit = False):
         z = Z[t]
         
         V_prim = V[:]
-        
 
         intervals_min, V_prim, _, instance_index_inf = d_alfa_sample(C[:], V_prim, d, A[0], z, True)
         distances = get_distances(C, V_prim, d)
@@ -52,7 +50,6 @@ def algorithm2(V, d, k, Z, alfa_h, epsilon, explicit = False):
         
         a_inf = A[0]
         for i in range(instance_index_inf, instance_index_sup, -1):
-            # print ("New")
             alfa = binary_search(C, A, V_prim, d, epsilon, i, z, distances)
             A_i = (a_inf, alfa)
             a_inf = alfa 

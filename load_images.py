@@ -8,15 +8,12 @@ def load_images(dirpath, width, height, to_resize = False):
     all_images = []
     filenames = []
 
-    print (width, height)
-
     if not os.path.isdir(dirpath):
         raise NotADirectoryError
 
     for image_path in os.listdir(dirpath):
         if image_path.lower().endswith(('.png', '.jpg', '.jpeg')):
             img = imread(os.path.join(dirpath, image_path) , as_gray=False)
-            # print (img)
             if to_resize:
                 img = resize(img, (width, height), preserve_range = True,
                                 anti_aliasing=False)

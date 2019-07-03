@@ -56,7 +56,7 @@ def dynamic_configure(V, d, k, m):
      
         j += 1
 
-    print ("Timp: (s)", time.time() - start_time)
+    print ("Time: (s)", round(time.time() - start_time, 2))
     return best_alfa
 
 def extract_centroids(V, d, k, alpha, beta):
@@ -99,7 +99,6 @@ def performance_test(V, d, k, cf):
         for beta in np.arange(beta_min, beta_max + beta_step, beta_step):
             alfa = ceil(alfa * 100) / 100
             beta = ceil(beta * 100) / 100
-            print (alfa, beta)
             centroids, voronoi_tiling, _ = algorithm1(V, d, k, alfa, beta, verbrose = True, sum_of_squared_distances = True)
             cost = cost_function[cf](V, centroids, voronoi_tiling, d, beta)
             return_cost.append((alfa, beta, cost))

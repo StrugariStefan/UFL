@@ -1,4 +1,6 @@
 from __future__ import print_function, unicode_literals
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import regex
 import multiprocessing
 
@@ -6,7 +8,6 @@ from pprint import pprint
 from PyInquirer import style_from_dict, Token, prompt
 from PyInquirer import Validator, ValidationError
 import click
-import os
 import numpy as np
 
 from utils import Persistance
@@ -39,7 +40,7 @@ class NumberValidator(Validator):
         except ValueError:
             raise ValidationError(
                 message='Please enter a number',
-                cursor_position=len(document.text))  # Move cursor to end
+                cursor_position=len(document.text))
 
 class FloatValidator(Validator):
     def validate(self, document):
@@ -57,7 +58,7 @@ class FloatValidator(Validator):
 style = style_from_dict({
     Token.QuestionMark: '#E91E63 bold',
     Token.Selected: '#673AB7 bold',
-    Token.Instruction: '',  # default
+    Token.Instruction: '',
     Token.Answer: '#2196f3 bold',
     Token.Question: '',
 })
@@ -326,23 +327,19 @@ def extractfeatures():
     data, arguments = Persistance("centroids").load(answers2['centroids'], "")
     final_centroids = data[0]
     k = arguments['k']
-    # print (final_centroids.shape)
-
-    # print (k)
-    # print (receptive_field_size)
-    # print (stride)
-
 
     suffix = "_" + answers2['kernel']
     try:
         data, _ = Persistance("repr_train").load(answers2['centroids'], suffix)
     except FileNotFoundError:
+        print ("Train images")
         data = FeatureExtractor()(x_train_raw, kernel[answers2['kernel']](final_centroids), k, receptive_field_size, stride)
         Persistance("repr_train").save(data, answers2['centroids'], suffix, kernel = answers2['kernel'])
 
     try:
         data, _ = Persistance("repr_test").load(answers2['centroids'], suffix)
     except FileNotFoundError:
+        print ("Test images")
         data = FeatureExtractor()(x_test_raw, kernel[answers2['kernel']](final_centroids), k, receptive_field_size, stride)
         Persistance("repr_test").save(data, answers2['centroids'], suffix, kernel = answers2['kernel'])
 
@@ -372,22 +369,17 @@ def trainmodel():
         receptive_field_size = patch_args['receptive_field_size']
         stride = patch_args['stride']
 
+        print (feature_set)
         for classifier in answers['classalg']:
-
-            # print (data['x_train_raw'].shape)
-            # print (data['x_test_raw'].shape)
-            # print (data['y_train'].shape)
-            # print (data['y_test'].shape)
-            # print (data['labels'])
-
             suffix = "_" + classifier
             classalg = classification_algorithms[classifier]()
             score = classalg(train_features, data['y_train'], test_features, data['y_test'], True)
             model = Model(classalg, feature_learner, train_features, test_features, data['x_train_raw'], data['y_train'], data['x_test_raw'], data['y_test'], k, receptive_field_size, stride, data['labels'])
-            print (feature_set)
-            print ("Training accuracy: " + str(model.classifier.train_score))
-            print ("Validation accuracy: " + str(model.classifier.accuracy))
-            print ("Best regularization parameter: " + str(model.classifier.best_c))
+            
+            print ("Classifier: " + str(model.classifier.__class__.__name__))
+            print ("\tTraining accuracy: " + str(model.classifier.train_score))
+            print ("\tValidation accuracy: " + str(model.classifier.accuracy))
+            print ("\tBest regularization parameter: " + str(model.classifier.best_c))
             
             Persistance("models").save(model, feature_set, suffix)
 
@@ -428,17 +420,10 @@ def loaddata(xtp, xtep, ytp, ytep, lp):
 
     x_train_raw, _ = load_images(xtp, answers['width'], answers['height'], to_resize=True)
     x_test_raw, _ = load_images(xtep, answers['width'], answers['height'], to_resize=True)
-    
-    # print (x_train_raw.shape)
-    # print (x_test_raw.shape)
 
     y_train = np.array(load_labels(ytp))
     y_test = np.array(load_labels(ytep))
     labels = load_labels(lp, type=str)
-
-    # print (y_train.shape)
-    # print(y_test.shape)
-    # print (labels)
 
     data = dict()
     data['x_train_raw'] = x_train_raw
@@ -501,7 +486,6 @@ def take_perfomance_test():
         costs, arguments = Persistance('performance').load(answers['patch'], suffix)
     except FileNotFoundError:
         costs = performance_test(patches, 2, answers['k'], answers['costfunc'])
-        print (costs)
         Persistance('performance').save(costs, answers['patch'], suffix, k = answers['k'])
 
 base_dataset_questions = [
@@ -527,8 +511,6 @@ def load_base_dataset(dataset):
     ((x_train, y_train), (x_test, y_test)), labels = dataset_name[dataset]()
 
     answers = prompt(base_dataset_questions, style=style)
-    
-    print (answers)
 
     r1 = min(x_train.shape[0], answers['train_sample'])
     r2 = min(x_test.shape[0], answers['test_sample'])
@@ -598,12 +580,6 @@ def load_base_dataset(dataset):
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         wr.writerow(data['labels'])
 
-    # print (x_train.shape)
-    # print (x_test.shape)
-    # print (y_train.shape)
-    # print (y_test.shape)
-    # print (labels)
-
 def remove():
     files = get_files("datasets")
     remove_questions[0]['choices'] = files
@@ -640,7 +616,7 @@ def get_files(dir):
     return files
 
 @click.command()
-@click.option('-c', '-command', type = click.Choice(['loaddata', 'performance', 'remove', 'preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict', 'getbyaccuracy', 'mnist', 'norb', 'cifar10']))
+@click.option('-c', '-command', type = click.Choice(['loaddata', 'performance', 'remove', 'preprocess', 'pretrain', 'extractfeatures', 'trainmodel', 'predict', 'getbyaccuracy', 'mnist', 'cifar10']))
 @click.option('-p', '-path', type = str)
 @click.option('-xtp', '-x_train_path', type = str)
 @click.option('-ytp', '-y_train_path', type = str)

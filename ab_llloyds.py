@@ -20,7 +20,6 @@ def get_Voronoi_tiling(C, V, k, d, beta = 2):
     Voronoi_tiling = [[] for _ in range(k)]
     clustering_indexes = [0 for _ in range(len(V))]
     for instance_index, instance in enumerate(V):
-        # centroid_proximal = min(C, key = lambda centroid: np.linalg.norm(np.subtract(instance, centroid), d) """** beta""", default = None)
         centroid_proximal = min(C, key = lambda centroid: np.linalg.norm(np.subtract(instance, centroid), d), default = None)        
         for i in range(len(C)):
             if np.array_equal(C[i], centroid_proximal):
@@ -39,9 +38,11 @@ def all_equal(C1, C2):
 def algorithm1(V, d, k, alfa, beta, initial_centroids = None, T_max = 3, verbrose = False, sum_of_squared_distances = True):
   
     if verbrose == True:
-        print ("Alfa parameter: " + str(alfa))
         print ("Number of instances: " + str(len(V)))
-        print ("Number of partitions: " + str(k)) 
+        print ("Number of partitions: " + str(k))
+        print ("Alpha parameter: " + str(alfa))
+        print ("Beta parameter: " + str(beta))
+
 
     start_time2 = time.time()
 
@@ -75,7 +76,6 @@ def algorithm1(V, d, k, alfa, beta, initial_centroids = None, T_max = 3, verbros
 
         if verbrose == True:
             print ("Timp: " + str(time.time() - start_time))
-        # print (clus_i)
         if all_equal(C_prim, C):
             break
         else:
@@ -84,7 +84,6 @@ def algorithm1(V, d, k, alfa, beta, initial_centroids = None, T_max = 3, verbros
     if verbrose == True:
         print ("Lloyds ended...")
         print ("Timp: (s)", time.time() - start_time2)
-    # print (clus_i)
     return np.asarray(C), Voronoi_tiling, clus_i
 
 

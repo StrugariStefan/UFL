@@ -17,6 +17,7 @@ cifar10_example2000/
 norb_example2000/
 norb_example200/
 500cifar10/
+50mnist/
 500mnist/
 80mnist/
 build/

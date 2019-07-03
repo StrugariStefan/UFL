@@ -1,6 +1,5 @@
 from keras.datasets import mnist
 from keras.datasets import cifar10
-# from small_norb.smallnorb.dataset import SmallNORBDataset
 
 def load_mnist():
     return mnist.load_data(), ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']

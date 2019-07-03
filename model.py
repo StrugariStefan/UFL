@@ -28,13 +28,9 @@ class Model:
 
     def __get_images_reprezentation__(self, images):
         images_reprezentation = []
-        # start_time = time.time()
-        # progress_bar.printProgressBar(0, images.shape[0], prefix = 'Progress:', suffix = 'Complete', length = 50)
         for i in range(images.shape[0]):
             images_reprezentation.append(self.__get_classifier_features__(images[i]))
-            # progress_bar.printProgressBar(i + 1, images.shape[0], prefix = 'Progress:', suffix = 'Complete', length = 50)
         images_reprezentation = np.asarray(images_reprezentation)
-        # print ("Timp: (s)", time.time() - start_time)
         return images_reprezentation
 
     def __get_classifier_features__(self, image):

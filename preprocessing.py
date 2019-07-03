@@ -3,7 +3,10 @@ import time
 from progress_bar import printProgressBar
 from utils import identity_function, reshape
 import random
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import tensorflow as tf
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 def rgb2gray(rgb_images):
     return np.dot(rbg_images[...,:3], [0.2989, 0.5870, 0.1140])
@@ -34,14 +37,12 @@ def whiten_images(images):
         start_time = time.time()
 
         cov = np.cov(images, rowvar = True)
-        print (cov.shape)
         U, S, V = np.linalg.svd(cov)
         
         epsilon = 0.1
         X_ZCA = U.dot(np.diag(1.0/np.sqrt(S + epsilon))).dot(U.T).dot(images)
         X_ZCA_rescaled = (X_ZCA - X_ZCA.min()) / (X_ZCA.max() - X_ZCA.min())
-        print ("Whitening ended")
-        print ("Timp: (s)", time.time() - start_time)
+        print ("Time: (s)", round(time.time() - start_time, 2))
         return reshape(X_ZCA_rescaled, X_ZCA_rescaled.shape[:1] + shape)
     else:
         X_ZCA_rescaled = np.empty(tuple([0] + list(images.shape[1:])))
@@ -61,7 +62,6 @@ def extract_random_patches(images, nextf, receptive_field_size = 6, stride = 1, 
 
     print ("Extracting random patches...")
     start_time = time.time()
-    # printProgressBar(0, images.shape[0], prefix = 'Progress:', suffix = 'Complete', length = 50)
     count = 0
     for image_index in range(images.shape[0]):
         for i in range(n_row):
@@ -70,12 +70,10 @@ def extract_random_patches(images, nextf, receptive_field_size = 6, stride = 1, 
                 if z < patching_probability:
                     count += 1
                     patches.append(images[image_index][i:i+receptive_field_size:1,j:j+receptive_field_size:1])
-        # printProgressBar(image_index + 1, images.shape[0], prefix = 'Progress:', suffix = 'Complete', length = 50)
 
     patches = np.asarray(patches)
-    print (patches.shape)
     
-    print ("Timp: (s)", time.time() - start_time)
+    print ("Time: (s)", round(time.time() - start_time, 2))
     patches = np.float32(patches / 255.)
     for func in nextf:
         patches = func(patches)

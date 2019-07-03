@@ -39,12 +39,10 @@ class FeatureExtractor:
     def __get_images_reprezentation__(self, images, procnum = 0, return_dict = None):
         images_reprezentation = []
         start_time = time.time()
-        # progress_bar.printProgressBar(0, images.shape[0], prefix = 'Progress:', suffix = 'Complete', length = 50)
         for i in range(images.shape[0]):
             images_reprezentation.append(self.__get_classifier_features__(images[i]))
-            # progress_bar.printProgressBar(i + 1, images.shape[0], prefix = 'Progress:', suffix = 'Complete', length = 50)
         images_reprezentation = np.asarray(images_reprezentation)
-        print ("Timp: (s)", time.time() - start_time)
+        print ("\tTime process no." + str(procnum) + ": (s)", round(time.time() - start_time, 2))
         if return_dict == None:
             return images_reprezentation
         else:

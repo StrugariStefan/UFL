@@ -24,9 +24,7 @@ class IClassifier:
         if not os.path.exists("models"):
             os.makedirs("models")
 
-        # print (self.name)
         filename = "models\\" + self.class_name + "_" + self.name + ".sav"
-        # print (filename)
         if Path(filename).is_file() == True:
             model = pickle.load(open(filename, 'rb'))
             return model
@@ -106,7 +104,6 @@ class Svc(IClassifier):
         best_clf = None
         best_c = 1.0
         for c in self.c_range:
-            # print ("SVC started, for C = " + str(c) + " ...")
             start_time = time.time()
 
             with warnings.catch_warnings():
@@ -120,10 +117,7 @@ class Svc(IClassifier):
                 if to_compute_training_error:
                     y_pred_train = clf.predict(x_train)
                     train_score = sum(y_pred_train == y_train)
-            # print ("Timp: (s)", time.time() - start_time)
-            # print ("SVC ended")
 
-            # print ("Score: " + str(score))
             if score > max_score:
                 max_score = score
                 best_clf = clf
@@ -131,8 +125,6 @@ class Svc(IClassifier):
                 if to_compute_training_error:
                     self.train_score = train_score / len(x_train)
                 
-        # self.__save_model__(Model(best_clf, feature_learner))
-
         self.clf, self.accuracy, self.best_c = best_clf, max_score / y_test.shape[0], best_c
 
         return (max_score / y_test.shape[0])
@@ -157,7 +149,6 @@ class LogisticRegresssion(IClassifier):
         best_clf = None
         best_c = 1.0
         for c in self.c_range:
-            # print ("SVC started, for C = " + str(c) + " ...")
             start_time = time.time()
 
             with warnings.catch_warnings():
@@ -171,18 +162,13 @@ class LogisticRegresssion(IClassifier):
                 if to_compute_training_error:
                     y_pred_train = clf.predict(x_train)
                     train_score = sum(y_pred_train == y_train)
-            # print ("Timp: (s)", time.time() - start_time)
-            # print ("SVC ended")
 
-            # print ("Score: " + str(score))
             if score > max_score:
                 max_score = score
                 best_clf = clf
                 best_c = c
                 if to_compute_training_error:
                     self.train_score = train_score / len(x_train)
-                
-        # self.__save_model__(Model(best_clf, feature_learner))
 
         self.clf, self.accuracy, self.best_c = best_clf, max_score / y_test.shape[0], best_c
 
@@ -209,7 +195,6 @@ class Knn(IClassifier):
         best_clf = None
         best_c = 1
         for neighbors in self.neighbors:
-            # print ("SVC started, for C = " + str(c) + " ...")
             start_time = time.time()
 
             with warnings.catch_warnings():
@@ -223,10 +208,6 @@ class Knn(IClassifier):
                 if to_compute_training_error:
                     y_pred_train = clf.predict(x_train)
                     train_score = sum(y_pred_train == y_train)
-            # print ("Timp: (s)", time.time() - start_time)
-            # print ("SVC ended")
-
-            # print ("Score: " + str(score))
             if score > max_score:
                 max_score = score
                 best_clf = clf
@@ -234,8 +215,6 @@ class Knn(IClassifier):
                 if to_compute_training_error:
                     self.train_score = train_score / len(x_train)
                 
-        # self.__save_model__(Model(best_clf, feature_learner))
-
         self.clf, self.accuracy, self.best_c = best_clf, max_score / y_test.shape[0], best_c
 
         return (max_score / y_test.shape[0])
@@ -247,7 +226,6 @@ class Knn(IClassifier):
 
 classification_algorithms = {
     "svc": Svc,
-    # "lloyds": Lloyds
     "logisticRegression": LogisticRegresssion,
     "knn": Knn
 }

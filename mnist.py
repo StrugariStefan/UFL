@@ -9,12 +9,6 @@ if __name__ == '__main__':
     import random
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-    print (x_train.shape)
-    print (x_test.shape)
-    print (y_train.shape)
-    print (y_test.shape)
-
-
     r1 = 2000
     n1 = len(x_train)
     x1 = {i for i in range(n1)}
@@ -25,17 +19,11 @@ if __name__ == '__main__':
     x2 = {i for i in range(n2)}
     xs2 = set(random.sample(x2, r2))
 
-    print (xs1)
-    print (xs2)
-
 
     x_train_raw = x_train[np.array(list(xs1))]
     x_test_raw = x_test[np.array(list(xs2))]
     y_train = y_train[np.array(list(xs1))].flatten()
     y_test = y_test[np.array(list(xs2))].flatten()
-
-    print (x_train_raw.shape)
-    print (x_test_raw.shape)
 
     data = dict()
     data['x_train_raw'] = x_train_raw
@@ -48,7 +36,6 @@ if __name__ == '__main__':
     p.save(data, "mnist_2000", "")
 
     data, arguments = p.load("mnist_2000", "")
-    print (data, arguments)
 
     xt_len = ceil(log10(len(x_train_raw)))
     for i, image in enumerate(x_train_raw):
