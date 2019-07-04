@@ -47,7 +47,6 @@ def whiten_images(images):
     else:
         X_ZCA_rescaled = np.empty(tuple([0] + list(images.shape[1:])))
         for i in range(n - 1):
-            print (X_ZCA_rescaled.shape)
             X_ZCA_rescaled = np.concatenate((X_ZCA_rescaled, whiten_images(images[i*5000:(i+1)*5000])), axis = 0)
             
         return X_ZCA_rescaled
