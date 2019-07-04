@@ -343,9 +343,23 @@ def extractfeatures():
         data = FeatureExtractor()(x_test_raw, kernel[answers2['kernel']](final_centroids), k, receptive_field_size, stride)
         Persistance("repr_test").save(data, answers2['centroids'], suffix, kernel = answers2['kernel'])
 
+train_questions1 = [
+    {
+        'type': 'list',
+        'name': 'dataset',
+        'message': 'Choose dataset',
+        'choices': [],
+        'filter': lambda val: val.lower()
+    },
+]
+
 def trainmodel():
+    files = get_files("datasets") 
+    train_questions1[0]['choices'] = files
+    answers1 = prompt(train_questions1, style=style)
+
     files = get_files("repr_train") 
-    trainmodel_questions[0]['choices'] = [{"name": f} for f in files]
+    trainmodel_questions[0]['choices'] = [{"name": f} for f in files if f.startswith(answers1['dataset'])]
     answers = prompt(trainmodel_questions, style=style)
     
     for feature_set in answers['features']:
