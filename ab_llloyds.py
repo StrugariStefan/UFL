@@ -9,16 +9,23 @@ def initialize(instances, d, k, alfa, sort_by_distance = False):
     V = instances[:]
     original_indexes = []
     
+    print ("Initialization")
+    start_time = time.time()
+
+    progress_bar.printProgressBar(0, k, "Progress:", "Complete", length = 50)
     for t in range(k):
         intervals, V, C, instance_index = d_alfa_sample(C, V, d, alfa, Z[t], sort_by_distance)
         original_indexes.append(list(filter(lambda element: all(element[1] == V[instance_index]), enumerate(instances)))[0][0])
         V = np.delete(V, instance_index, axis = 0)
+        progress_bar.printProgressBar(t + 1, k, "Progress:", "Complete", length = 50)        
 
+    print ("Time: (s)", round(time.time() - start_time, 2))
     return C, V, intervals, original_indexes, Z
 
 def get_Voronoi_tiling(C, V, k, d, beta = 2):
     Voronoi_tiling = [[] for _ in range(k)]
     clustering_indexes = [0 for _ in range(len(V))]
+
     for instance_index, instance in enumerate(V):
         centroid_proximal = min(C, key = lambda centroid: np.linalg.norm(np.subtract(instance, centroid), d), default = None)        
         for i in range(len(C)):
@@ -60,7 +67,7 @@ def algorithm1(V, d, k, alfa, beta, initial_centroids = None, T_max = 3, verbros
         Voronoi_tiling, clus_i = get_Voronoi_tiling(C, V, k, d, beta)
 
         if verbrose == True:
-            print ("Iteratie " + str(t))
+            print ("Iteration: " + str(t))
             progress_bar.printProgressBar(0, k, "Progress:", "Complete", length = 50)
         for i in range(k):
 #             instance_x = min(V, key = lambda x: sum(list(map(lambda v: np.linalg.norm(np.subtract(x, v)) ** beta, Voronoi_tiling[i]))))
@@ -75,7 +82,7 @@ def algorithm1(V, d, k, alfa, beta, initial_centroids = None, T_max = 3, verbros
         t += 1
 
         if verbrose == True:
-            print ("Timp: " + str(time.time() - start_time))
+            print ("Time: (s)", round(time.time() - start_time, 2))
         if all_equal(C_prim, C):
             break
         else:
@@ -83,7 +90,7 @@ def algorithm1(V, d, k, alfa, beta, initial_centroids = None, T_max = 3, verbros
 
     if verbrose == True:
         print ("Lloyds ended...")
-        print ("Timp: (s)", time.time() - start_time2)
+        print ("Time: (s)", round(time.time() - start_time2, 2))
     return np.asarray(C), Voronoi_tiling, clus_i
 
 

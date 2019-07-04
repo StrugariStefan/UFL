@@ -423,6 +423,7 @@ def predict(path, plot):
         if plot == False:
             pprint(predictions)
         else:
+
             import matplotlib.pyplot as plt
             from skimage.io import imread
 
@@ -433,8 +434,7 @@ def predict(path, plot):
                 p = plt.imshow(img)
                 plt.title(v, fontsize = 40)
                 fig = plt.gcf()
-                plt.pause(2)
-
+                plt.pause(1.3)
 
 
 
@@ -480,7 +480,7 @@ def get_by_accuracy():
 
     models_info.sort(key = lambda el: el[3] + 1e-5 * el[2], reverse = True)
 
-    print (tabulate(models_info, headers = ['Dataset', 'Classifier', 'Train accuracy', 'Validation accuracy']))
+    print (tabulate(models_info, headers = ['Model', 'Classifier', 'Train', 'Validation']))
 
 performance_test_questions = [
     {
