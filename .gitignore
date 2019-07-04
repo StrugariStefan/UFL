@@ -26,6 +26,7 @@ images/
 samples/
 examples/
 cmd_i_ex2.py
+slideshow.py
 command_line_interface.py
 mnist.py
 norb.py

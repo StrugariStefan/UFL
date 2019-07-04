@@ -383,10 +383,24 @@ def trainmodel():
             
             Persistance("models").save(model, feature_set, suffix)
 
+predict_questions1 = [
+    {
+        'type': 'list',
+        'name': 'dataset',
+        'message': 'Choose dataset',
+        'choices': [],
+        'filter': lambda val: val.lower()
+    },
+]
 
-def predict(path):
+
+def predict(path, plot):
+    files = get_files("datasets") 
+    predict_questions1[0]['choices'] = files
+    answers1 = prompt(predict_questions1, style=style)
+
     files = get_files("models") 
-    predict_questions[0]['choices'] = files
+    predict_questions[0]['choices'] = [f for f in files if f.startswith(answers1['dataset'])]
     answers = prompt(predict_questions, style=style)
     
     model, _ = Persistance("models").load(answers['model'], '')
@@ -405,7 +419,24 @@ def predict(path):
         for i, f in enumerate(files):
             predictions[f] = model.labels[y_pred[i]]
 
-        pprint(predictions)
+        
+        if plot == False:
+            pprint(predictions)
+        else:
+            import matplotlib.pyplot as plt
+            from skimage.io import imread
+
+            fig, ax = plt.subplots()
+            i = 0
+            for k, v in predictions.items():
+                img = imread(os.path.join(path, k))
+                p = plt.imshow(img)
+                plt.title(v, fontsize = 40)
+                fig = plt.gcf()
+                plt.pause(2)
+
+
+
 
 def loaddata(xtp, xtep, ytp, ytep, lp):
     answers = prompt(loaddata_questions, style=style)
@@ -623,7 +654,8 @@ def get_files(dir):
 @click.option('-xtep', '-x_test_path', type = str)
 @click.option('-ytep', '-y_test_path', type = str)
 @click.option('-lp', '-labels_path', type = str)
-def main(c, p, xtp, ytp, xtep, ytep, lp):
+@click.option('--plot/--no-plot', default = False)
+def main(c, p, xtp, ytp, xtep, ytep, lp, plot):
     if c in ['mnist', 'norb', 'cifar10']:    
         load_base_dataset(c)
     elif c == 'performance':
@@ -665,7 +697,7 @@ def main(c, p, xtp, ytp, xtep, ytep, lp):
             print ("Specify path to folder or image...\n\t-p\n\t--path")
             return
         try:
-            predict(p)
+            predict(p, plot)
         except NotADirectoryError:
             print ("Directory doesn't exist")
 
